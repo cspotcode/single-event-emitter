@@ -9,18 +9,7 @@ matrix:
       env: SCRIPT=test
     - node_js: "4"
       env: SCRIPT=test
-    - node_js: "8"
-      env:
-        - secure: TgXbhcemKQTLl5+OdTMZyn3yNFgn2qqwpt8LccI8KVGfCKRHnKLOUE1PYXQi9tPRS5N+ofzHKzMVh5/2bfm3hCsihH0n6ItoWLLyd5BjcBWTp862wG4Dvgqq7dVofnf4eSVk34VYtqaKfszypRQ8UGvj/X48j5ANElU7OP4iIPg=
-        - SAUCE_USERNAME=eventemitter3
-        - SCRIPT=test-browser
 script:
   - "npm run ${SCRIPT}"
 after_success:
   - 'if [ "${SCRIPT}" == "test" ]; then npm i coveralls@2 && nyc report --reporter=text-lcov | coveralls; fi'
-notifications:
-  irc:
-    channels:
-      - "irc.freenode.org#primus"
-    on_success: change
-    on_failure: change

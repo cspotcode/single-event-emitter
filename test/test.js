@@ -2,11 +2,10 @@ describe('EventEmitter', function tests() {
   'use strict';
 
   var EventEmitter = require('../')
-    , assume = require('assume');
+    , _assume = require('assume');
 
-  it('exposes a `prefixed` property', function () {
-    assume(EventEmitter.prefixed).is.either([false, '~']);
-  });
+  /** @type (v: any) => any */
+  var assume = _assume;
 
   it('exposes a module namespace object', function() {
     assume(EventEmitter.EventEmitter).equals(EventEmitter);
@@ -28,80 +27,81 @@ describe('EventEmitter', function tests() {
     moop.listeners();
     meap.listeners();
 
-    moop.on('data', function () {
+    moop.on(function () {
       throw new Error('I should not emit');
     });
 
-    meap.emit('data', 'rawr');
-    meap.removeListener('foo');
+    meap.emit('rawr');
+    meap.removeListener();
     meap.removeAllListeners();
   });
 
   if ('undefined' !== typeof Symbol) it('works with ES6 symbols', function (next) {
     var e = new EventEmitter()
+      , eUnknown = new EventEmitter()
       , event = Symbol('cows')
       , unknown = Symbol('moo');
 
-    e.on(event, function foo(arg) {
-      assume(e.listenerCount(unknown)).equals(0);
-      assume(e.listeners(unknown)).deep.equals([]);
+    e.on(function foo(arg) {
+      assume(eUnknown.listenerCount()).equals(0);
+      assume(eUnknown.listeners()).deep.equals([]);
       assume(arg).equals('bar');
 
       function bar(onced) {
-        assume(e.listenerCount(unknown)).equals(0);
-        assume(e.listeners(unknown)).deep.equals([]);
+        assume(eUnknown.listenerCount()).equals(0);
+        assume(eUnknown.listeners()).deep.equals([]);
         assume(onced).equals('foo');
         next();
       }
 
-      e.once(unknown, bar);
+      eUnknown.once(bar);
 
-      assume(e.listenerCount(event)).equals(1);
-      assume(e.listeners(event)).deep.equals([foo]);
-      assume(e.listenerCount(unknown)).equals(1);
-      assume(e.listeners(unknown)).deep.equals([bar]);
+      assume(e.listenerCount()).equals(1);
+      assume(e.listeners()).deep.equals([foo]);
+      assume(eUnknown.listenerCount()).equals(1);
+      assume(eUnknown.listeners()).deep.equals([bar]);
 
-      e.removeListener(event);
+      e.removeListener();
 
-      assume(e.listenerCount(event)).equals(0);
-      assume(e.listeners(event)).deep.equals([]);
-      assume(e.emit(unknown, 'foo')).equals(true);
+      assume(e.listenerCount()).equals(0);
+      assume(e.listeners()).deep.equals([]);
+      assume(eUnknown.emit('foo')).equals(true);
     });
 
-    assume(e.emit(unknown, 'bar')).equals(false);
-    assume(e.emit(event, 'bar')).equals(true);
+    assume(eUnknown.emit('bar')).equals(false);
+    assume(e.emit('bar')).equals(true);
   });
 
   describe('EventEmitter#emit', function () {
     it('should return false when there are not events to emit', function () {
       var e = new EventEmitter();
 
-      assume(e.emit('foo')).equals(false);
-      assume(e.emit('bar')).equals(false);
+      assume(e.emit()).equals(false);
+      assume(e.emit()).equals(false);
     });
 
     it('emits with context', function (done) {
       var context = { bar: 'baz' }
         , e = new EventEmitter();
 
-      e.on('foo', function (bar) {
+      e.on(function (bar) {
         assume(bar).equals('bar');
         assume(this).equals(context);
 
         done();
-      }, context).emit('foo', 'bar');
+      }, context).emit('bar');
     });
 
     it('emits with context, multiple arguments (force apply)', function (done) {
       var context = { bar: 'baz' }
         , e = new EventEmitter();
 
-      e.on('foo', function (bar) {
+      e.on(function (bar) {
         assume(bar).equals('bar');
         assume(this).equals(context);
 
         done();
-      }, context).emit('foo', 'bar', 1, 2, 3, 4, 5, 6, 7, 8, 9, 0);
+      }, context).emit('bar', 1, 2, 3, 4, 5, 6, 7, 8, 9, 0);
     });
 
     it('can emit the function with multiple arguments', function () {
@@ -113,11 +113,11 @@ describe('EventEmitter', function tests() {
             args.push(j);
           }
 
-          e.once('args', function () {
+          e.once(function () {
             assume(arguments.length).equals(args.length);
           });
 
-          e.emit.apply(e, ['args'].concat(args));
+          e.emit.apply(e, [].concat(args));
         })(i);
       }
     });
@@ -131,23 +131,23 @@ describe('EventEmitter', function tests() {
             args.push(j);
           }
 
-          e.once('args', function () {
+          e.once(function () {
             assume(arguments.length).equals(args.length);
           });
 
-          e.once('args', function () {
+          e.once(function () {
             assume(arguments.length).equals(args.length);
           });
 
-          e.once('args', function () {
+          e.once(function () {
             assume(arguments.length).equals(args.length);
           });
 
-          e.once('args', function () {
+          e.once(function () {
             assume(arguments.length).equals(args.length);
           });
 
-          e.emit.apply(e, ['args'].concat(args));
+          e.emit.apply(e, [].concat(args));
         })(i);
       }
     });
@@ -155,17 +155,17 @@ describe('EventEmitter', function tests() {
     it('emits with context, multiple listeners (force loop)', function () {
       var e = new EventEmitter();
 
-      e.on('foo', function (bar) {
+      e.on(function (bar) {
         assume(this).eqls({ foo: 'bar' });
         assume(bar).equals('bar');
       }, { foo: 'bar' });
 
-      e.on('foo', function (bar) {
+      e.on(function (bar) {
         assume(this).eqls({ bar: 'baz' });
         assume(bar).equals('bar');
       }, { bar: 'baz' });
 
-      e.emit('foo', 'bar');
+      e.emit('bar');
     });
 
     it('emits with different contexts', function () {
@@ -176,32 +176,33 @@ describe('EventEmitter', function tests() {
         pattern += this;
       }
 
-      e.on('write', writer, 'foo');
-      e.on('write', writer, 'baz');
-      e.once('write', writer, 'bar');
-      e.once('write', writer, 'banana');
+      e.on(writer, 'foo');
+      e.on(writer, 'baz');
+      e.once(writer, 'bar');
+      e.once(writer, 'banana');
 
-      e.emit('write');
+      e.emit();
       assume(pattern).equals('foobazbarbanana');
     });
 
     it('should return true when there are events to emit', function () {
-      var e = new EventEmitter()
+      var eFoo = new EventEmitter()
+        , eFoob = new EventEmitter()
         , called = 0;
 
-      e.on('foo', function () {
+      eFoo.on(function () {
         called++;
       });
 
-      assume(e.emit('foo')).equals(true);
-      assume(e.emit('foob')).equals(false);
+      assume(eFoo.emit()).equals(true);
+      assume(eFoob.emit()).equals(false);
       assume(called).equals(1);
     });
 
     it('receives the emitted events', function (done) {
       var e = new EventEmitter();
 
-      e.on('data', function (a, b, c, d, undef) {
+      e.on(function (a, b, c, d, undef) {
         assume(a).equals('foo');
         assume(b).equals(e);
         assume(c).is.instanceOf(Date);
@@ -211,42 +212,27 @@ describe('EventEmitter', function tests() {
         done();
       });
 
-      e.emit('data', 'foo', e, new Date());
+      e.emit('foo', e, new Date());
     });
 
     it('emits to all event listeners', function () {
       var e = new EventEmitter()
         , pattern = [];
 
-      e.on('foo', function () {
+      e.on(function () {
         pattern.push('foo1');
       });
 
-      e.on('foo', function () {
+      e.on(function () {
         pattern.push('foo2');
       });
 
-      e.emit('foo');
+      e.emit();
 
       assume(pattern.join(';')).equals('foo1;foo2');
     });
 
-    (function each(keys) {
-      var key = keys.shift();
-
-      if (!key) return;
-
-      it('can store event which is a known property: '+ key, function (next) {
-        var e = new EventEmitter();
-
-        e.on(key, function (k) {
-          assume(k).equals(key);
-          next();
-        }).emit(key, key);
-      });
-
-      each(keys);
-    })([
+    [
       'hasOwnProperty',
       'constructor',
       '__proto__',
@@ -254,15 +240,24 @@ describe('EventEmitter', function tests() {
       'toValue',
       'unwatch',
       'watch'
-    ]);
+    ].forEach(function(key) {
+      it('can store event which is a known property: '+ key, function (done) {
+        var e = new EventEmitter();
+
+        e.on(function (k) {
+          assume(k).equals(key);
+          done();
+        }).emit(key);
+      });
+    });
   });
 
   describe('EventEmitter#listeners', function () {
     it('returns an empty array if no listeners are specified', function () {
       var e = new EventEmitter();
 
-      assume(e.listeners('foo')).is.a('array');
-      assume(e.listeners('foo').length).equals(0);
+      assume(e.listeners()).is.a('array');
+      assume(e.listeners().length).equals(0);
     });
 
     it('returns an array of function', function () {
@@ -270,10 +265,10 @@ describe('EventEmitter', function tests() {
 
       function foo() {}
 
-      e.on('foo', foo);
-      assume(e.listeners('foo')).is.a('array');
-      assume(e.listeners('foo').length).equals(1);
-      assume(e.listeners('foo')).deep.equals([foo]);
+      e.on(foo);
+      assume(e.listeners()).is.a('array');
+      assume(e.listeners().length).equals(1);
+      assume(e.listeners()).deep.equals([foo]);
     });
 
     it('is not vulnerable to modifications', function () {
@@ -281,12 +276,12 @@ describe('EventEmitter', function tests() {
 
       function foo() {}
 
-      e.on('foo', foo);
+      e.on(foo);
 
-      assume(e.listeners('foo')).deep.equals([foo]);
+      assume(e.listeners()).deep.equals([foo]);
 
-      e.listeners('foo').length = 0;
-      assume(e.listeners('foo')).deep.equals([foo]);
+      e.listeners().length = 0;
+      assume(e.listeners()).deep.equals([foo]);
     });
   });
 
@@ -295,12 +290,11 @@ describe('EventEmitter', function tests() {
       var e = new EventEmitter();
 
       assume(e.listenerCount()).equals(0);
-      assume(e.listenerCount('foo')).equals(0);
 
-      e.on('foo', function () {});
-      assume(e.listenerCount('foo')).equals(1);
-      e.on('foo', function () {});
-      assume(e.listenerCount('foo')).equals(2);
+      e.on(function () {});
+      assume(e.listenerCount()).equals(1);
+      e.on(function () {});
+      assume(e.listenerCount()).equals(2);
     });
   });
 
@@ -309,7 +303,7 @@ describe('EventEmitter', function tests() {
       var e = new EventEmitter();
 
       try {
-        e.on('foo', 'bar');
+        e.on('bar');
       } catch (ex) {
         assume(ex).is.instanceOf(TypeError);
         assume(ex.message).equals('The listener must be a function');
@@ -325,7 +319,7 @@ describe('EventEmitter', function tests() {
       var e = new EventEmitter()
         , calls = 0;
 
-      e.once('foo', function () {
+      e.once(function () {
         calls++;
       });
 
@@ -335,7 +329,7 @@ describe('EventEmitter', function tests() {
       e.emit('foo');
       e.emit('foo');
 
-      assume(e.listeners('foo').length).equals(0);
+      assume(e.listeners().length).equals(0);
       assume(calls).equals(1);
     });
 
@@ -343,13 +337,13 @@ describe('EventEmitter', function tests() {
       var e = new EventEmitter()
         , calls = 0;
 
-      e.once('foo', function () {
+      e.once(function () {
         calls++;
         e.emit('foo');
       });
 
-      e.emit('foo');
-      assume(e.listeners('foo').length).equals(0);
+      e.emit();
+      assume(e.listeners().length).equals(0);
       assume(calls).equals(1);
     });
 
@@ -359,25 +353,25 @@ describe('EventEmitter', function tests() {
         , foo = 0
         , bar = 0;
 
-      e.once('foo', function () {
+      e.once(function () {
         foo++;
       });
 
-      e.once('foo', function () {
+      e.once(function () {
         bar++;
       });
 
-      e.on('foo', function () {
+      e.on(function () {
         multi++;
       });
 
-      e.emit('foo');
-      e.emit('foo');
-      e.emit('foo');
-      e.emit('foo');
-      e.emit('foo');
+      e.emit();
+      e.emit();
+      e.emit();
+      e.emit();
+      e.emit();
 
-      assume(e.listeners('foo').length).equals(1);
+      assume(e.listeners().length).equals(1);
       assume(multi).equals(5);
       assume(foo).equals(1);
       assume(bar).equals(1);
@@ -387,12 +381,12 @@ describe('EventEmitter', function tests() {
       var context = { foo: 'bar' }
         , e = new EventEmitter();
 
-      e.once('foo', function (bar) {
+      e.once(function (bar) {
         assume(this).equals(context);
         assume(bar).equals('bar');
 
         done();
-      }, context).emit('foo', 'bar');
+      }, context).emit('bar');
     });
   });
 
@@ -400,50 +394,46 @@ describe('EventEmitter', function tests() {
     it('removes all listeners when the listener is not specified', function () {
       var e = new EventEmitter();
 
-      e.on('foo', function () {});
-      e.on('foo', function () {});
+      e.on(function () {});
+      e.on(function () {});
 
-      assume(e.removeListener('foo')).equals(e);
-      assume(e.listeners('foo')).eql([]);
+      assume(e.removeListener()).equals(e);
+      assume(e.listeners()).eql([]);
     });
 
     it('removes only the listeners matching the specified listener', function () {
-      var e = new EventEmitter();
+      var eFoo = new EventEmitter();
+      var eBar = new EventEmitter();
 
       function foo() {}
       function bar() {}
       function baz() {}
 
-      e.on('foo', foo);
-      e.on('bar', bar);
-      e.on('bar', baz);
+      eFoo.on(foo);
+      eBar.on(bar);
+      eBar.on(baz);
 
-      assume(e.removeListener('foo', bar)).equals(e);
-      assume(e.listeners('bar')).eql([bar, baz]);
-      assume(e.listeners('foo')).eql([foo]);
-      assume(e._eventsCount).equals(2);
+      assume(eFoo.removeListener(bar)).equals(eFoo);
+      assume(eBar.listeners()).eql([bar, baz]);
+      assume(eFoo.listeners()).eql([foo]);
 
-      assume(e.removeListener('foo', foo)).equals(e);
-      assume(e.listeners('bar')).eql([bar, baz]);
-      assume(e.listeners('foo')).eql([]);
-      assume(e._eventsCount).equals(1);
+      assume(eFoo.removeListener(foo)).equals(eFoo);
+      assume(eBar.listeners()).eql([bar, baz]);
+      assume(eFoo.listeners()).eql([]);
 
-      assume(e.removeListener('bar', bar)).equals(e);
-      assume(e.listeners('bar')).eql([baz]);
-      assume(e._eventsCount).equals(1);
+      assume(eBar.removeListener(bar)).equals(eBar);
+      assume(eBar.listeners()).eql([baz]);
 
-      assume(e.removeListener('bar', baz)).equals(e);
-      assume(e.listeners('bar')).eql([]);
-      assume(e._eventsCount).equals(0);
+      assume(eBar.removeListener(baz)).equals(eBar);
+      assume(eBar.listeners()).eql([]);
 
-      e.on('foo', foo);
-      e.on('foo', foo);
-      e.on('bar', bar);
+      eFoo.on(foo);
+      eFoo.on(foo);
+      eBar.on(bar);
 
-      assume(e.removeListener('foo', foo)).equals(e);
-      assume(e.listeners('bar')).eql([bar]);
-      assume(e.listeners('foo')).eql([]);
-      assume(e._eventsCount).equals(1);
+      assume(eFoo.removeListener(foo)).equals(eFoo);
+      assume(eBar.listeners()).eql([bar]);
+      assume(eFoo.listeners()).eql([]);
     });
 
     it('removes only the once listeners when using the once flag', function () {
@@ -451,36 +441,30 @@ describe('EventEmitter', function tests() {
 
       function foo() {}
 
-      e.on('foo', foo);
+      e.on(foo);
 
-      assume(e.removeListener('foo', function () {}, undefined, true)).equals(e);
-      assume(e.listeners('foo')).eql([foo]);
-      assume(e._eventsCount).equals(1);
+      assume(e.removeListener(function () {}, undefined, true)).equals(e);
+      assume(e.listeners()).eql([foo]);
 
-      assume(e.removeListener('foo', foo, undefined, true)).equals(e);
-      assume(e.listeners('foo')).eql([foo]);
-      assume(e._eventsCount).equals(1);
+      assume(e.removeListener(foo, undefined, true)).equals(e);
+      assume(e.listeners()).eql([foo]);
 
-      assume(e.removeListener('foo', foo)).equals(e);
-      assume(e.listeners('foo')).eql([]);
-      assume(e._eventsCount).equals(0);
+      assume(e.removeListener(foo)).equals(e);
+      assume(e.listeners()).eql([]);
 
-      e.once('foo', foo);
-      e.on('foo', foo);
+      e.once(foo);
+      e.on(foo);
 
-      assume(e.removeListener('foo', function () {}, undefined, true)).equals(e);
-      assume(e.listeners('foo')).eql([foo, foo]);
-      assume(e._eventsCount).equals(1);
+      assume(e.removeListener(function () {}, undefined, true)).equals(e);
+      assume(e.listeners()).eql([foo, foo]);
 
-      assume(e.removeListener('foo', foo, undefined, true)).equals(e);
-      assume(e.listeners('foo')).eql([foo]);
-      assume(e._eventsCount).equals(1);
+      assume(e.removeListener(foo, undefined, true)).equals(e);
+      assume(e.listeners()).eql([foo]);
 
-      e.once('foo', foo);
+      e.once(foo);
 
-      assume(e.removeListener('foo', foo)).equals(e);
-      assume(e.listeners('foo')).eql([]);
-      assume(e._eventsCount).equals(0);
+      assume(e.removeListener(foo)).equals(e);
+      assume(e.listeners()).eql([]);
     });
 
     it('removes only the listeners matching the correct context', function () {
@@ -490,153 +474,67 @@ describe('EventEmitter', function tests() {
       function foo() {}
       function bar() {}
 
-      e.on('foo', foo, context);
+      e.on(foo, context);
 
-      assume(e.removeListener('foo', function () {}, context)).equals(e);
-      assume(e.listeners('foo')).eql([foo]);
-      assume(e._eventsCount).equals(1);
+      assume(e.removeListener(function () {}, context)).equals(e);
+      assume(e.listeners()).eql([foo]);
 
-      assume(e.removeListener('foo', foo, { baz: 'quux' })).equals(e);
-      assume(e.listeners('foo')).eql([foo]);
-      assume(e._eventsCount).equals(1);
+      assume(e.removeListener(foo, { baz: 'quux' })).equals(e);
+      assume(e.listeners()).eql([foo]);
 
-      assume(e.removeListener('foo', foo, context)).equals(e);
-      assume(e.listeners('foo')).eql([]);
-      assume(e._eventsCount).equals(0);
+      assume(e.removeListener(foo, context)).equals(e);
+      assume(e.listeners()).eql([]);
 
-      e.on('foo', foo, context);
-      e.on('foo', bar);
+      e.on(foo, context);
+      e.on(bar);
 
-      assume(e.removeListener('foo', foo, { baz: 'quux' })).equals(e);
-      assume(e.listeners('foo')).eql([foo, bar]);
-      assume(e._eventsCount).equals(1);
+      assume(e.removeListener(foo, { baz: 'quux' })).equals(e);
+      assume(e.listeners()).eql([foo, bar]);
 
-      assume(e.removeListener('foo', foo, context)).equals(e);
-      assume(e.listeners('foo')).eql([bar]);
-      assume(e._eventsCount).equals(1);
+      assume(e.removeListener(foo, context)).equals(e);
+      assume(e.listeners()).eql([bar]);
 
-      e.on('foo', bar, context);
+      e.on(bar, context);
 
-      assume(e.removeListener('foo', bar)).equals(e);
-      assume(e.listeners('foo')).eql([]);
-      assume(e._eventsCount).equals(0);
+      assume(e.removeListener(bar)).equals(e);
+      assume(e.listeners()).eql([]);
     });
   });
 
   describe('EventEmitter#removeAllListeners', function () {
     it('removes all events for the specified events', function () {
       var e = new EventEmitter();
+      var eBar = new EventEmitter();
+      var eAaa = new EventEmitter();
 
-      e.on('foo', function () { throw new Error('oops'); });
-      e.on('foo', function () { throw new Error('oops'); });
-      e.on('bar', function () { throw new Error('oops'); });
-      e.on('aaa', function () { throw new Error('oops'); });
-
-      assume(e.removeAllListeners('foo')).equals(e);
-      assume(e.listeners('foo').length).equals(0);
-      assume(e.listeners('bar').length).equals(1);
-      assume(e.listeners('aaa').length).equals(1);
-      assume(e._eventsCount).equals(2);
-
-      assume(e.removeAllListeners('bar')).equals(e);
-      assume(e._eventsCount).equals(1);
-      assume(e.removeAllListeners('aaa')).equals(e);
-      assume(e._eventsCount).equals(0);
-
-      assume(e.emit('foo')).equals(false);
-      assume(e.emit('bar')).equals(false);
-      assume(e.emit('aaa')).equals(false);
-    });
-
-    it('just nukes the fuck out of everything', function () {
-      var e = new EventEmitter();
-
-      e.on('foo', function () { throw new Error('oops'); });
-      e.on('foo', function () { throw new Error('oops'); });
-      e.on('bar', function () { throw new Error('oops'); });
-      e.on('aaa', function () { throw new Error('oops'); });
+      e.on(function () { throw new Error('oops'); });
+      e.on(function () { throw new Error('oops'); });
+      eBar.on(function () { throw new Error('oops'); });
+      eAaa.on(function () { throw new Error('oops'); });
 
       assume(e.removeAllListeners()).equals(e);
-      assume(e.listeners('foo').length).equals(0);
-      assume(e.listeners('bar').length).equals(0);
-      assume(e.listeners('aaa').length).equals(0);
-      assume(e._eventsCount).equals(0);
+      assume(e.listeners().length).equals(0);
+      assume(eBar.listeners().length).equals(1);
+      assume(eAaa.listeners().length).equals(1);
 
-      assume(e.emit('foo')).equals(false);
-      assume(e.emit('bar')).equals(false);
-      assume(e.emit('aaa')).equals(false);
+      assume(eBar.removeAllListeners()).equals(eBar);
+      assume(eAaa.removeAllListeners()).equals(eAaa);
+
+      assume(e.emit()).equals(false);
+      assume(eBar.emit()).equals(false);
+      assume(eAaa.emit()).equals(false);
     });
-  });
 
-  describe('EventEmitter#eventNames', function () {
-    it('returns an empty array when there are no events', function () {
+    it('removes every single listener from emitter', function () {
       var e = new EventEmitter();
 
-      assume(e.eventNames()).eql([]);
+      e.on(function () { throw new Error('oops'); });
+      e.on(function () { throw new Error('oops'); });
 
-      e.on('foo', function () {});
-      e.removeAllListeners('foo');
+      assume(e.removeAllListeners()).equals(e);
+      assume(e.listeners().length).equals(0);
 
-      assume(e.eventNames()).eql([]);
-    });
-
-    it('returns an array listing the events that have listeners', function () {
-      var e = new EventEmitter()
-        , original;
-
-      function bar() {}
-
-      if (Object.getOwnPropertySymbols) {
-        //
-        // Monkey patch `Object.getOwnPropertySymbols()` to increase coverage
-        // on Node.js > 0.10.
-        //
-        original = Object.getOwnPropertySymbols;
-        Object.getOwnPropertySymbols = undefined;
-      }
-
-      e.on('foo', function () {});
-      e.on('bar', bar);
-
-      try {
-        assume(e.eventNames()).eql(['foo', 'bar']);
-        e.removeListener('bar', bar);
-        assume(e.eventNames()).eql(['foo']);
-      } catch (ex) {
-        throw ex;
-      } finally {
-        if (original) Object.getOwnPropertySymbols = original;
-      }
-    });
-
-    it('does not return inherited property identifiers', function () {
-      var e = new EventEmitter();
-
-      function Collection() {}
-      Collection.prototype.foo = function () {
-        return 'foo';
-      };
-
-      e._events = new Collection();
-
-      assume(e._events.foo()).equal('foo');
-      assume(e.eventNames()).eql([]);
-    });
-
-    if ('undefined' !== typeof Symbol) it('includes ES6 symbols', function () {
-      var e = new EventEmitter()
-        , s = Symbol('s');
-
-      function foo() {}
-
-      e.on('foo', foo);
-      e.on(s, function () {});
-
-      assume(e.eventNames()).eql(['foo', s]);
-
-      e.removeListener('foo', foo);
-
-      assume(e.eventNames()).eql([s]);
+      assume(e.emit()).equals(false);
     });
   });
 });

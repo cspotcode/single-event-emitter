@@ -3,50 +3,42 @@
  * `EventEmitter` interface.
  */
 declare class EventEmitter {
-  static prefixed: string | boolean;
+  /**
+   * Return the listeners registered.
+   */
+  listeners(): Array<EventEmitter.ListenerFn>;
 
   /**
-   * Return an array listing the events for which the emitter has registered
-   * listeners.
+   * Return the number of listeners listening.
    */
-  eventNames(): Array<string | symbol>;
+  listenerCount(): number;
 
   /**
-   * Return the listeners registered for a given event.
+   * Calls each of the listeners registered.
    */
-  listeners(event: string | symbol): Array<EventEmitter.ListenerFn>;
+  emit(...args: Array<any>): boolean;
 
   /**
-   * Return the number of listeners listening to a given event.
+   * Add a listener.
    */
-  listenerCount(event: string | symbol): number;
+  on(fn: EventEmitter.ListenerFn, context?: any): this;
+  addListener(fn: EventEmitter.ListenerFn, context?: any): this;
 
   /**
-   * Calls each of the listeners registered for a given event.
+   * Add a one-time listener.
    */
-  emit(event: string | symbol, ...args: Array<any>): boolean;
+  once(fn: EventEmitter.ListenerFn, context?: any): this;
 
   /**
-   * Add a listener for a given event.
+   * Remove the listeners.
    */
-  on(event: string | symbol, fn: EventEmitter.ListenerFn, context?: any): this;
-  addListener(event: string | symbol, fn: EventEmitter.ListenerFn, context?: any): this;
+  removeListener(fn?: EventEmitter.ListenerFn, context?: any, once?: boolean): this;
+  off(fn?: EventEmitter.ListenerFn, context?: any, once?: boolean): this;
 
   /**
-   * Add a one-time listener for a given event.
+   * Remove all listeners.
    */
-  once(event: string | symbol, fn: EventEmitter.ListenerFn, context?: any): this;
-
-  /**
-   * Remove the listeners of a given event.
-   */
-  removeListener(event: string | symbol, fn?: EventEmitter.ListenerFn, context?: any, once?: boolean): this;
-  off(event: string | symbol, fn?: EventEmitter.ListenerFn, context?: any, once?: boolean): this;
-
-  /**
-   * Remove all listeners, or those of the specified event.
-   */
-  removeAllListeners(event?: string | symbol): this;
+  removeAllListeners(): this;
 }
 
 declare namespace EventEmitter {
