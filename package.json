@@ -5,7 +5,7 @@
   "main": "index.js",
   "typings": "index.d.ts",
   "scripts": {
-    "build": "mkdir -p umd && browserify index.js -s SingleEventEmitter | uglifyjs -cm -o umd/single-event-emitter.min.js",
+    "build": "mkdir umd && browserify index.js -s SingleEventEmitter | uglifyjs -cm -o umd/single-event-emitter.min.js",
     "benchmark": "find benchmarks/run -name '*.js' -exec benchmarks/start.sh {} \\;",
     "test": "nyc --reporter=html --reporter=text mocha test/test.js",
     "test-browser": "node test/browser.js",
