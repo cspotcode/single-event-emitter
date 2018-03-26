@@ -1,6 +1,6 @@
 {
   "name": "single-event-emitter",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "One event emitter per event.  Like C# delegates & events, or RxJS multicast observables.",
   "main": "index.js",
   "typings": "index.d.ts",
