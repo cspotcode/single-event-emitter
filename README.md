@@ -28,6 +28,24 @@ single event; no event names required.  Parts of the API that e.g. return a list
 
 TypeScript declarations are included; use them if you're confused.
 
+### TODO
+
+Add helpers to:
+* re-emit EventEmitter / DOM events as a SingleEventEmitter.
+* re-emit SingleEventEmitter on node EventEmitter / DOM events.
+* bind an event, returning a disposer function.
+
+Add a few proxy utilities:
+* debounce?
+* event filter
+  * `filter(emitter, () => boolean)` returns new Emitter
+  * `filterTo(emitter, targetEmitter, () => boolean)`
+
+Don't go overboard; complicated stuff can be handled with RxJS.
+
+Make emitter a function synonymous with `.on()` method
+* E.g., should be able to `thisObject.onClick(callback)`
+
 ---
 
 EventEmitter3 is a high performance EventEmitter. It has been micro-optimized
